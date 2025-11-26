@@ -6,6 +6,7 @@ import CustomTable from "../../utills/customTable";
 import { Settings, Download } from "lucide-react";
 import { getDownloadURL, ref, listAll } from "firebase/storage";
 import JSZip from "jszip";
+import toast from "react-hot-toast";
 import { saveAs } from "file-saver";
 
 export default function DistributorTablePage() {
@@ -21,7 +22,6 @@ export default function DistributorTablePage() {
   const [filteredData, setFilteredData] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
 
-  // Fetch up to 10 image URLs from Firebase Storage
   const getDistributorImages = async (docId) => {
     try {
       const folderRef = ref(storage, `distributors/${docId}`);
@@ -36,7 +36,6 @@ export default function DistributorTablePage() {
     }
   };
 
-  // Fetch Firestore + Storage Data
   useEffect(() => {
     const fetchDistributors = async () => {
       setLoading(true);
@@ -47,11 +46,8 @@ export default function DistributorTablePage() {
           querySnapshot.docs.map(async (doc) => {
             const data = doc.data();
             const distributor = { id: doc.id, ...data };
-
-            // Always fetch real storage images (ignore Firestore images)
             const urls = await getDistributorImages(distributor.docId);
             distributor.images = urls;
-
             return distributor;
           })
         );
@@ -195,7 +191,6 @@ export default function DistributorTablePage() {
     []
   );
 
-  // Handle Column Settings (same as before)
   useEffect(() => {
     const savedVisibility = localStorage.getItem("visibleColumns");
     const savedOrder = localStorage.getItem("columnOrder");
@@ -243,7 +238,7 @@ export default function DistributorTablePage() {
     <div className="p-1 relative overflow-y-auto">
       {/* Filter Header */}
       <div className="flex gap-2 items-center pb-1 flex-wrap">
-        <div className="flex gap-2 items-center p-1 rounded bg-gray-200">
+        {/* <div className="flex gap-2 items-center p-1 rounded bg-gray-200">
           <div className="flex flex-row items-center gap-1">
             <span className="text-[12px] text-gray-600">From</span>
             <input
@@ -270,7 +265,7 @@ export default function DistributorTablePage() {
               Search
             </button>
           </div>
-        </div>
+        </div> */}
 
         <div className="flex items-center gap-3">
           <input
@@ -348,7 +343,7 @@ export default function DistributorTablePage() {
                           );
                         } catch (err) {
                           console.error("Image download failed:", err);
-                          alert(
+                          toast.error(
                             "Failed to download this image. Please try again."
                           );
                         }
@@ -373,8 +368,6 @@ export default function DistributorTablePage() {
                         const folder = zip.folder(
                           selectedImage.name || "distributor"
                         );
-
-                        // Parallel download for speed
                         const blobs = await Promise.all(
                           selectedImage.urls.map(async (url, i) => {
                             const response = await fetch(url, {
@@ -397,7 +390,9 @@ export default function DistributorTablePage() {
                         );
                       } catch (err) {
                         console.error("ZIP download failed:", err);
-                        alert("Failed to download all images. Try again.");
+                        toast.error(
+                          "Failed to download all images. Please try again."
+                        );
                       }
                     }}
                     className="bg-[#f56219] text-white px-5 py-2 rounded-md font-medium 

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { IoIosArrowForward, IoIosClose } from "react-icons/io";
 import { MdDashboard, MdOutlineManageAccounts } from "react-icons/md";
@@ -13,6 +13,12 @@ import { Users } from "lucide-react";
 export default function CRMHeader({ onModuleChange }) {
   const router = useRouter();
   const [showSidebar, setShowSidebar] = useState(false);
+  const [role, setRole] = useState("");
+
+  useEffect(() => {
+    const r = localStorage.getItem("role");
+    setRole(r);
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -27,7 +33,7 @@ export default function CRMHeader({ onModuleChange }) {
     <>
       {/* HEADER */}
       <header className="bg-[#e0f0fb] fixed top-0 left-0 w-full z-50 px-2 py-1 flex justify-between items-center shadow-sm">
-        {/* LEFT: Arrow + Logo */}
+        {/* LEFT Side */}
         <div className="flex items-center gap-0">
           <button
             onClick={() => setShowSidebar(!showSidebar)}
@@ -59,7 +65,7 @@ export default function CRMHeader({ onModuleChange }) {
         <div className="flex items-center gap-4">
           <button
             onClick={handleLogout}
-            className="bg-[#f56219] hover:bg-[#bd460a] text-white px-4 py-1.5 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 cursor-pointer"
+            className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-1.5 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 cursor-pointer"
           >
             Logout
           </button>
@@ -110,16 +116,18 @@ export default function CRMHeader({ onModuleChange }) {
           </li>
 
           {/* Manage Users */}
-          <li
-            className="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-[#f56219]/10 hover:text-[#f56219] transition-all"
-            onClick={() => {
-              onModuleChange("manage-users");
-              setShowSidebar(false);
-            }}
-          >
-            <Users className="text-xl" />
-            <span>Manage Users</span>
-          </li>
+          {role === "admin" && (
+            <li
+              className="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-[#f56219]/10 hover:text-[#f56219] transition-all"
+              onClick={() => {
+                onModuleChange("manage-users");
+                setShowSidebar(false);
+              }}
+            >
+              <Users className="text-xl" />
+              <span>Manage Users</span>
+            </li>
+          )}
         </ul>
 
         {/* BOTTOM LOGO */}

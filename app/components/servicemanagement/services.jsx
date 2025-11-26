@@ -67,7 +67,6 @@ const Services = () => {
     });
   };
 
-  // Handle file selection
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     setSelectedImages((prev) => [...prev, ...files]);
@@ -75,7 +74,6 @@ const Services = () => {
     setImagePreviews((prev) => [...prev, ...newPreviews]);
   };
 
-  // Delete an image before upload
   const handleRemoveImage = (index) => {
     setSelectedImages((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
@@ -258,57 +256,53 @@ const Services = () => {
       { Header: "Service Tenure", accessor: "serviceTenure" },
       { Header: "Service Expire Date", accessor: "serviceExpireDate" },
       { Header: "Notes", accessor: "notes" },
-    {
-  Header: "Service Status",
-  accessor: "serviceStatus",
-  Cell: ({ row }) => {
-    const status = getClientStatus(
-      row.original.activationDate,
-      row.original.serviceTenure?.split(" ")[0]
-    );
-
-    return (
-      <span
-     className={`px-2 py-1 rounded-full text-xs font-medium inline-block text-center ${statusColors[status]}`}
-      >
-        {/* DOT REMOVED */}
-
-        {status === "t1"
-          ? "T + 1"
-          : status === "t3"
-          ? "T + 3"
-          : status.charAt(0).toUpperCase() + status.slice(1)}
-      </span>
-    );
-  },
-},
-
-
       {
-        Header: "Images",
-        accessor: "images",
+        Header: "Service Status",
+        accessor: "serviceStatus",
         Cell: ({ row }) => {
-          const hasImages =
-            row.original.images && row.original.images.length > 0;
+          const status = getClientStatus(
+            row.original.activationDate,
+            row.original.serviceTenure?.split(" ")[0]
+          );
 
-          return hasImages ? (
-            <button
-              onClick={() =>
-                setSelectedImage({
-                  urls: row.original.images,
-                  name: row.original.fullName || row.original.docId,
-                  details: row.original,
-                })
-              }
-              className="text-blue-600 hover:underline cursor-pointer"
+          return (
+            <span
+              className={`px-2 py-1 rounded-full text-xs font-medium inline-block text-center ${statusColors[status]}`}
             >
-              View Images
-            </button>
-          ) : (
-            <span className="text-gray-600 text-xs">No images</span>
+              {status === "t1"
+                ? "T + 1"
+                : status === "t3"
+                ? "T + 3"
+                : status.charAt(0).toUpperCase() + status.slice(1)}
+            </span>
           );
         },
       },
+      // {
+      //   Header: "Images",
+      //   accessor: "images",
+      //   Cell: ({ row }) => {
+      //     const hasImages =
+      //       row.original.images && row.original.images.length > 0;
+
+      //     return hasImages ? (
+      //       <button
+      //         onClick={() =>
+      //           setSelectedImage({
+      //             urls: row.original.images,
+      //             name: row.original.fullName || row.original.docId,
+      //             details: row.original,
+      //           })
+      //         }
+      //         className="text-blue-600 hover:underline cursor-pointer"
+      //       >
+      //         View Images
+      //       </button>
+      //     ) : (
+      //       <span className="text-gray-600 text-xs">No images</span>
+      //     );
+      //   },
+      // },
     ],
     []
   );
@@ -376,29 +370,27 @@ const Services = () => {
         </button>
 
         {/* Search Bar */}
-        <div className="flex gap-2 items-center p-1 rounded mb-0">
-          <input
-            type="text"
-            placeholder="Search Clients..."
-            value={searchValue}
-            onChange={(e) => {
-              const value = e.target.value.toLowerCase();
-              setSearchValue(value);
+        <input
+          type="text"
+          placeholder="Search Clients..."
+          value={searchValue}
+          onChange={(e) => {
+            const value = e.target.value.toLowerCase();
+            setSearchValue(value);
 
-              if (!value.trim()) {
-                fetchClients();
-                return;
-              }
+            if (!value.trim()) {
+              setFilteredData(allClients);
+              return;
+            }
 
-              const filtered = filteredData.filter((client) =>
-                Object.values(client).join(" ").toLowerCase().includes(value)
-              );
+            const filtered = allClients.filter((client) =>
+              Object.values(client).join(" ").toLowerCase().includes(value)
+            );
 
-              setFilteredData(filtered);
-            }}
-            className="border border-gray-400 px-3 py-1 rounded-md text-sm"
-          />
-        </div>
+            setFilteredData(filtered);
+          }}
+          className="border border-gray-400 px-3 py-1 rounded-md text-sm"
+        />
 
         <button
           onClick={() => setShowSettings(true)}
@@ -417,7 +409,7 @@ const Services = () => {
 
         {/* filters button */}
         {showFilter && (
-          <div className="flex items-center gap-2 pl-2 border border-gray-300 py-1 rounded-md cursor-pointer">
+          <div className="flex items-center gap-2 p-2 border border-gray-300 py-1 rounded-md">
             {statusFilters.map((filter) => (
               <button
                 key={filter.value}
@@ -431,7 +423,7 @@ const Services = () => {
                   );
                   setFilteredData(filtered);
                 }}
-                className={`px-2 py-1 bg-gray-200 text-xs rounded-md hover:bg-orange-500 hover:text-white transition ${filter.className}`}
+                className={`px-2 py-1 bg-gray-200 text-xs rounded-md  hover:text-white transition ${filter.className}`}
               >
                 {filter.label}
               </button>
@@ -442,7 +434,7 @@ const Services = () => {
               onClick={() => {
                 setFilteredData(allClients);
               }}
-              className="px-2 py-1 bg-gray-300 text-xs rounded-md hover:bg-gray-400 transition"
+              className="px-2 py-1 bg-gray-300 border border-gray-600 text-xs rounded-md hover:bg-gray-600 hover:text-white transition cursor-pointer"
             >
               Reset
             </button>
@@ -475,27 +467,39 @@ const Services = () => {
           className="absolute bg-white shadow-[0_10px_40px_rgba(0,0,0,0.25)] border border-gray-200"
         >
           {/* Header */}
-          <div className="drag-header cursor-move bg-[#FE681C]  text-white px-4 py-3 rounded-t-xl flex justify-between items-center select-none">
-            <span className="font-semibold text-base">Add New Client</span>
+          <div className="drag-header cursor-move bg-linear-to-r from-[#FE681C] to-[#FF8744] text-white px-5 py-3.5 rounded-t-xl flex justify-between items-center select-none shadow-lg">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-white/60"></div>
+              <span className="font-semibold text-base tracking-wide">
+                Add New Client
+              </span>
+            </div>
 
-            {/* Minimize Button */}
-            <button
-              type="button"
-              className="text-white text-xl font-bold w-6 h-6  rounded hover:bg-white/20"
-              onClick={() => {
-                document
-                  .getElementById(`form-body-${form.id}`)
-                  .classList.toggle("hidden");
-              }}
-            >
-              –
-            </button>
-            <MdClose
-              className="text-white text-2xl cursor-pointer hover:text-black transition"
-              onClick={() =>
-                setOpenForms(openForms.filter((f) => f.id !== form.id))
-              }
-            />
+            <div className="flex items-center gap-2">
+              {/* Minimize Button */}
+              <button
+                type="button"
+                className="text-white text-lg font-bold w-7 h-7 rounded-md hover:bg-white/20 active:bg-white/30 transition-all duration-200 flex items-center justify-center cursor-pointer"
+                onClick={() => {
+                  document
+                    .getElementById(`form-body-${form.id}`)
+                    .classList.toggle("hidden");
+                }}
+              >
+                –
+              </button>
+
+              {/* Close Button */}
+              <button
+                type="button"
+                className="text-white w-7 h-7 rounded-md hover:bg-white/20 active:bg-white/30 transition-all duration-200 flex items-center justify-center group cursor-pointer"
+                onClick={() =>
+                  setOpenForms(openForms.filter((f) => f.id !== form.id))
+                }
+              >
+                <MdClose className="text-xl group-hover:rotate-90 transition-transform duration-300" />
+              </button>
+            </div>
           </div>
           <div
             id={`form-body-${form.id}`}
@@ -949,7 +953,7 @@ const Services = () => {
                           );
                         } catch (err) {
                           console.error("Image download failed:", err);
-                          alert(
+                          toast.error(
                             "Failed to download this image. Please try again."
                           );
                         }
@@ -994,7 +998,9 @@ const Services = () => {
                         saveAs(zipBlob, `${selectedImage.name}_images.zip`);
                       } catch (err) {
                         console.error("ZIP download failed:", err);
-                        alert("Failed to download all images. Try again.");
+                        toast.error(
+                          "Failed to download all images. Please try again."
+                        );
                       }
                     }}
                     className="bg-[#f56219] text-white px-5 py-2 rounded-md font-medium 

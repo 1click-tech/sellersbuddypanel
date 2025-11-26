@@ -11,7 +11,6 @@ import {
   MdOutlineArrowForwardIos,
 } from "react-icons/md";
 
-// Highlight helper
 const HighlightText = ({ text, highlight }) => {
   if (!highlight) return <>{text}</>;
   const parts = text.split(new RegExp(`(${highlight})`, "gi"));
@@ -91,9 +90,9 @@ const CustomTable = ({ columns, data, searchValue }) => {
                       <th
                         key={thKey}
                         {...thProps}
-                        className="px-3 py-3 text-left whitespace-nowrap border-b border-gray-200 bg-blue-100"
+                        className="px-1 py-2 text-left gap-2 border-b border-gray-200 bg-blue-100"
                       >
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
                           {column.render("Header")}
                           <span className="text-xs">
                             {column.isSorted
@@ -128,7 +127,7 @@ const CustomTable = ({ columns, data, searchValue }) => {
                       <td
                         key={cellKey}
                         {...cellProps}
-                        className="px-3 py-1 text-gray-900 border-b border-gray-200 whitespace-nowrap font-inter text-xs"
+                        className="px-1 py-1 text-gray-900 border-b border-gray-200 whitespace-nowrap font-inter text-xs"
                       >
                         {cell.column.id === "createdAt" ? (
                           cell.value?.split(" ")[0]
@@ -181,7 +180,7 @@ const CustomTable = ({ columns, data, searchValue }) => {
           >
             {[50, 100, 150, 200].map((size) => (
               <option key={size} value={size}>
-                Show {size}
+               {size}
               </option>
             ))}
           </select>

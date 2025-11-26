@@ -1,6 +1,4 @@
 import localFont from "next/font/local";
-import geistSans from "./fonts/GeistVF.woff";
-import geistMono from "./fonts/GeistMonoVF.woff";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 

@@ -28,6 +28,14 @@ const ManageUsers = () => {
       .replace(regex, `<mark class="bg-yellow-300 text-black">$1</mark>`);
   };
 
+  useEffect(() => {
+    const role = localStorage.getItem("role");
+    if (role !== "admin") {
+      toast.error("You are not authorized to access this page.");
+      window.location.href = "/dashboard";
+    }
+  }, []);
+
   const loadUsers = async () => {
     const querySnapshot = await getDocs(collection(db, "users"));
 
@@ -169,7 +177,7 @@ const ManageUsers = () => {
         Add User
       </button>
 
-      {/* // seach in Table   */}
+      {/*  seach in Table   */}
       <input
         type="text"
         placeholder="Search Users..."

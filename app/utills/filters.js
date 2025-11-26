@@ -4,25 +4,25 @@ export const statusFilters = [
     label: "Active",
     value: "active",
     className:
-      "bg-green-800 text-white hover:bg-green-600 border border-green-700"
+      "bg-green-200 text-green-800 hover:bg-green-600 border border-green-700 cursor-pointer"
   },
   {
     label: "T + 1",
     value: "t1",
     className:
-      "bg-orange-500 text-white hover:bg-blue-600 border border-blue-700"
+      "bg-yellow-200 text-yellow-800 hover:bg-yellow-600 border border-yellow-700 cursor-pointer"
   },
   {
     label: "T + 3",
     value: "t3",
     className:
-      "bg-yellow-500 text-white hover:bg-yellow-600 border border-yellow-700"
+      "bg-blue-200 text-blue-800 hover:bg-blue-600 border border-blue-700 cursor-pointer"
   },
   {
     label: "Inactive",
     value: "inactive",
     className:
-      "bg-red-800 text-white hover:bg-red-600 border border-red-700"
+      "bg-red-200 text-red-800 hover:bg-red-500 border border-red-700 cursor-pointer"
   }
 ];
 
@@ -31,17 +31,14 @@ export const getClientStatus = (activationDate, tenureMonths) => {
 
   const start = new Date(activationDate);
   const months = parseInt(tenureMonths);
-
-  const end = new Date(start);
-  end.setMonth(start.getMonth() + months);
-
+  const expiry = new Date(start);
+  expiry.setMonth(expiry.getMonth() + months);
   const today = new Date();
-  if (today > end) return "inactive";
-  const diffMonths =
-    (today.getFullYear() - start.getFullYear()) * 12 +
-    (today.getMonth() - start.getMonth());
-    if (diffMonths < 1) return "t1";
-    if (diffMonths < 3) return "t3";
+  if (today > expiry) return "inactive";
+  const remainingDays = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+
+  if (remainingDays <= 30) return "t1";
+  if (remainingDays <= 90) return "t3";
   return "active";
 };
 
