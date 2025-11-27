@@ -174,7 +174,6 @@ export default function DistributorTablePage() {
           );
         },
       },
-
       { Header: "Product Categories", accessor: "productCategories" },
       { Header: "Retailers Covered", accessor: "retailersCovered" },
       { Header: "Territory Interested", accessor: "territoryInterested" },
@@ -185,7 +184,11 @@ export default function DistributorTablePage() {
       { Header: "City", accessor: "city" },
       { Header: "Pincode", accessor: "pincode" },
       { Header: "Payment Reference ID", accessor: "referenceId" },
-      { Header: "Reference ID At", accessor: "referenceIdAt" },
+      {
+        Header: "Reference ID At",
+        accessor: "referenceIdAt",
+        className: "min-w-[130px] max-w-[240px]",
+      },
       { Header: "Created At", accessor: "createdAt" },
     ],
     []
@@ -291,6 +294,7 @@ export default function DistributorTablePage() {
           data={filteredData}
           columns={filteredColumns}
           searchValue={searchValue}
+          loading={loading}
         />
       ) : (
         <p className="text-gray-500 text-center mt-10">
@@ -445,13 +449,13 @@ export default function DistributorTablePage() {
             <div className="flex justify-end gap-3 mt-5">
               <button
                 onClick={() => setShowSettings(false)}
-                className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
+                className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 cursor-pointer"
               >
                 Close
               </button>
               <button
                 onClick={() => setShowSettings(false)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer"
               >
                 Apply
               </button>

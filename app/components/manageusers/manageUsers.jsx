@@ -297,7 +297,7 @@ const ManageUsers = () => {
 
       {/* USERS TABLE */}
       <div className="mt-4">
-        <CustomTable columns={columns} data={users} searchValue={searchValue} />
+        <CustomTable columns={columns} data={users} searchValue={searchValue}  />
       </div>
     </div>
   );

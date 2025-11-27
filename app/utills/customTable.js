@@ -29,7 +29,7 @@ const HighlightText = ({ text, highlight }) => {
   );
 };
 
-const CustomTable = ({ columns, data, searchValue }) => {
+const CustomTable = ({ columns, data, searchValue, loading }) => {
   const tableData = useMemo(() => data || [], [data]);
 
   const tableInstance = useTable(
@@ -72,7 +72,7 @@ const CustomTable = ({ columns, data, searchValue }) => {
           className="min-w-full border-separate border-spacing-0 text-sm"
         >
           {/* Header */}
-          <thead className="bg-gray-100 sticky top-0 shadow-sm z-10">
+          <thead className="bg-gray-100 sticky top-0  shadow-sm z-10">
             {headerGroups.map((headerGroup) => {
               const { key: headerKey, ...headerProps } =
                 headerGroup.getHeaderGroupProps();
@@ -80,7 +80,7 @@ const CustomTable = ({ columns, data, searchValue }) => {
                 <tr
                   key={headerKey}
                   {...headerProps}
-                  className="text-gray-900 font-semibold"
+                  className="text-gray-900 gap-2 font-semibold "
                 >
                   {headerGroup.headers.map((column) => {
                     const { key: thKey, ...thProps } = column.getHeaderProps(
@@ -90,9 +90,9 @@ const CustomTable = ({ columns, data, searchValue }) => {
                       <th
                         key={thKey}
                         {...thProps}
-                        className="px-1 py-2 text-left gap-2 border-b border-gray-200 bg-blue-100"
+                        className={`${column.className}px-2 py-2 text-left gap-2 border-b border-gray-200 bg-blue-100`}
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-5">
                           {column.render("Header")}
                           <span className="text-xs">
                             {column.isSorted
@@ -110,43 +110,63 @@ const CustomTable = ({ columns, data, searchValue }) => {
             })}
           </thead>
 
-          {/* Body */}
           <tbody {...getTableBodyProps()}>
-            {page.map((row) => {
-              prepareRow(row);
-              const { key: rowKey, ...rowProps } = row.getRowProps();
-              return (
-                <tr
-                  key={rowKey}
-                  {...rowProps}
-                  className="hover:bg-gray-50 transition border-b border-gray-100"
+            {loading ? (
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="py-10 text-center bg-white"
                 >
-                  {row.cells.map((cell) => {
-                    const { key: cellKey, ...cellProps } = cell.getCellProps();
-                    return (
-                      <td
-                        key={cellKey}
-                        {...cellProps}
-                        className="px-1 py-1 text-gray-900 border-b border-gray-200 whitespace-nowrap font-inter text-xs"
-                      >
-                        {cell.column.id === "createdAt" ? (
-                          cell.value?.split(" ")[0]
-                        ) : cell.column.id === "docId" ||
-                          cell.column.id === "images" ||
-                          cell.column.id === "serviceStatus" ? (
-                          cell.render("Cell")
-                        ) : (
-                          <HighlightText
-                            text={String(cell.value ?? "")}
-                            highlight={searchValue}
-                          />
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              );
-            })}
+                  <div className="flex flex-col items-center justify-center">
+                    <img
+                      src="/loader.gif"
+                      alt="Loading..."
+                      className="w-10 h-10 opacity-80"
+                    />
+                    <p className="text-gray-500 text-xs mt-2 animate-pulse">
+                      Loading data...
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              page.map((row) => {
+                prepareRow(row);
+                const { key: rowKey, ...rowProps } = row.getRowProps();
+                return (
+                  <tr
+                    key={rowKey}
+                    {...rowProps}
+                    className="hover:bg-gray-50 transition border-b border-gray-100"
+                  >
+                    {row.cells.map((cell) => {
+                      const { key: cellKey, ...cellProps } =
+                        cell.getCellProps();
+                      return (
+                        <td
+                          key={cellKey}
+                          {...cellProps}
+                          className="p-2 py-1.5 text-gray-900 border border-gray-200 whitespace-nowrap font-inter text-xs"
+                        >
+                          {cell.column.id === "createdAt" ? (
+                            cell.value?.split(" ")[0]
+                          ) : cell.column.id === "docId" ||
+                            cell.column.id === "images" ||
+                            cell.column.id === "serviceStatus" ? (
+                            cell.render("Cell")
+                          ) : (
+                            <HighlightText
+                              text={String(cell.value ?? "")}
+                              highlight={searchValue}
+                            />
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
@@ -180,7 +200,7 @@ const CustomTable = ({ columns, data, searchValue }) => {
           >
             {[50, 100, 150, 200].map((size) => (
               <option key={size} value={size}>
-               {size}
+                {size}
               </option>
             ))}
           </select>

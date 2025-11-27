@@ -79,6 +79,23 @@ const Services = () => {
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const formatOnlyDate = (dateStr) => {
+    if (!dateStr) return "";
+    const [year, month, day] = dateStr.split("-");
+    return `${day}-${month}-${year}`;
+  };
+
+  const formatDateTime = (date) => {
+    const pad = (n) => String(n).padStart(2, "0");
+    const day = pad(date.getDate());
+    const month = pad(date.getMonth() + 1);
+    const year = date.getFullYear();
+    const hours = pad(date.getHours());
+    const mins = pad(date.getMinutes());
+    const secs = pad(date.getSeconds());
+    return `${day}/${month}/${year} ${hours}:${mins}:${secs}`;
+  };
+
   const handleTenureChange = (e) => {
     const tenure = e.target.value;
     let months = 0;
@@ -129,7 +146,6 @@ const Services = () => {
       toast.error("Please fill all required fields * correctly.");
       return;
     }
-
     try {
       const newClientId = await generateUniqueClientId();
       let imageUrls = [];
@@ -144,9 +160,11 @@ const Services = () => {
       }
       const finalData = {
         ...formData,
+        activationDate: formatOnlyDate(formData.activationDate),
+        serviceExpireDate: formatOnlyDate(formData.serviceExpireDate),
         productImages: imageUrls,
         clientId: newClientId,
-        createdAt: new Date(),
+        createdAt: Date.now(),
       };
       await setDoc(doc(db, "clients", newClientId), finalData);
       fetchClients();
@@ -233,29 +251,15 @@ const Services = () => {
   const columns = useMemo(
     () => [
       {
-        Header: "Doc ID",
+        Header: "Profile ID",
         accessor: "docId",
         Cell: ({ value }) => (
           <button className="text-blue-600 font-medium">{value}</button>
         ),
       },
-      { Header: "Contact Person", accessor: "contactPerson" },
-      { Header: "Mobile", accessor: "mobile" },
-      { Header: "Email", accessor: "email" },
-      { Header: "City", accessor: "city" },
       { Header: "Company Name", accessor: "companyName" },
       { Header: "Brand Name", accessor: "brandName" },
-      { Header: "Company Address", accessor: "companyAddress" },
-      { Header: "Pin Code", accessor: "pinCode" },
-      { Header: "GST Number", accessor: "gst" },
-      { Header: "Turnover", accessor: "turnOver" },
-      { Header: "Activation Date", accessor: "activationDate" },
-      { Header: "Sales Executive", accessor: "salesExecutive" },
-      { Header: "Service Plan", accessor: "servicePlan" },
-      { Header: "Sales Amount", accessor: "salesAmount" },
-      { Header: "Service Tenure", accessor: "serviceTenure" },
-      { Header: "Service Expire Date", accessor: "serviceExpireDate" },
-      { Header: "Notes", accessor: "notes" },
+      { Header: "Contact Person", accessor: "contactPerson" },
       {
         Header: "Service Status",
         accessor: "serviceStatus",
@@ -278,6 +282,25 @@ const Services = () => {
           );
         },
       },
+      { Header: "Service Tenure", accessor: "serviceTenure" },
+      { Header: "Activation Date", accessor: "activationDate" },
+      {
+        Header: "Service Expire Date",
+        accessor: "serviceExpireDate",
+        className: "min-w-[130px] max-w-[240px]",
+      },
+      { Header: "Sales Executive", accessor: "salesExecutive" },
+      { Header: "Service", accessor: "servicePlan" },
+      { Header: "Sales Amount", accessor: "salesAmount" },
+      { Header: "Mobile", accessor: "mobile" },
+      { Header: "Email", accessor: "email" },
+      { Header: "City", accessor: "city" },
+      { Header: "Company Address", accessor: "companyAddress" },
+      { Header: "Pin Code", accessor: "pinCode" },
+      { Header: "GST Number", accessor: "gst" },
+      { Header: "Turnover", accessor: "turnOver" },
+      { Header: "Notes", accessor: "notes" },
+
       // {
       //   Header: "Images",
       //   accessor: "images",
@@ -446,9 +469,9 @@ const Services = () => {
         <Rnd
           key={form.id}
           default={{
-            x: window.innerWidth / 2 - 400 + (form.id % 40),
-            y: window.innerHeight / 2 - 400 + (form.id % 30),
-            width: 780,
+            x: window.innerWidth / 2 - 340 + (form.id % 30),
+            y: 2 + (form.id % 10),
+            width: 680,
             height: "auto",
           }}
           minWidth={350}
@@ -793,7 +816,6 @@ const Services = () => {
                     <option value="3 Months">3 Months</option>
                     <option value="6 Months">6 Months</option>
                     <option value="12 Months">12 Months</option>
-                    <option value="Other">Other</option>
                   </select>
                 </div>
 
@@ -870,6 +892,7 @@ const Services = () => {
           data={filteredData}
           columns={filteredColumns}
           searchValue={searchValue}
+          loading={loading}
         />
       ) : (
         <p className="text-gray-500 text-center mt-10">

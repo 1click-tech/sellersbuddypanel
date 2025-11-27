@@ -4,7 +4,7 @@ import { Toaster } from "react-hot-toast";
 
 
 export const metadata = {
-  title: "1Clickdistributors",
+  title: "expand.1clickdistributors.com",
   description: "Internal tool for 1Clickdistributors",
 };
 
