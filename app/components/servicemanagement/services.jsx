@@ -41,6 +41,66 @@ const Services = () => {
   const [showFilter, setShowFilter] = useState(false);
   const [allClients, setAllClients] = useState([]);
   const [role, setRole] = useState("");
+  // Prospect Delivery Popup
+  const [showProspectPopup, setShowProspectPopup] = useState(false);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [notes, setNotes] = useState("");
+  const [notesHistory, setNotesHistory] = useState([]);
+
+  useEffect(() => {
+    if (!selectedClient?.docId) return;
+
+    const loadNotes = async () => {
+      const snap = await getDocs(
+        collection(db, "clients", selectedClient.docId, "notesHistory")
+      );
+
+      const arr = snap.docs
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => b.createdAt - a.createdAt);
+
+      setNotesHistory(arr);
+    };
+
+    loadNotes();
+  }, [selectedClient]);
+
+  const saveNote = async () => {
+    if (!notes.trim()) {
+      toast.error("Please enter a note!");
+      return;
+    }
+
+    const refColl = collection(
+      db,
+      "clients",
+      selectedClient.docId,
+      "notesHistory"
+    );
+
+    const newNote = {
+      note: notes,
+      createdAt: Date.now(),
+    };
+
+    const docRef = doc(refColl);
+    await setDoc(docRef, newNote);
+
+    toast.success("Note saved!");
+
+    setNotesHistory((prev) => [{ id: docRef.id, ...newNote }, ...prev]);
+    setNotes("");
+  };
+
+  const deleteNote = async (id) => {
+    await deleteDoc(
+      doc(db, "clients", selectedClient.docId, "notesHistory", id)
+    );
+
+    setNotesHistory((prev) => prev.filter((item) => item.id !== id));
+
+    toast.success("Note deleted");
+  };
 
   const [formData, setFormData] = useState({
     contactPerson: "",
@@ -54,12 +114,20 @@ const Services = () => {
     gst: "",
     turnOver: "",
     productImages: [],
+
     activationDate: "",
     salesExecutive: "",
     servicePlan: "",
     salesAmount: "",
     serviceTenure: "",
     serviceExpireDate: "",
+
+    website: "",
+    marketplace1: "",
+    marketplace2: "",
+    marketplace3: "",
+    marketplace4: "",
+
     notes: "",
   });
 
@@ -230,12 +298,20 @@ const Services = () => {
       gst: "",
       turnOver: "",
       productImages: [],
+
       activationDate: "",
       salesExecutive: "",
       servicePlan: "",
       salesAmount: "",
       serviceTenure: "",
       serviceExpireDate: "",
+
+      website: "",
+      marketplace1: "",
+      marketplace2: "",
+      marketplace3: "",
+      marketplace4: "",
+
       notes: "",
     });
     setSelectedImages([]);
@@ -260,20 +336,17 @@ const Services = () => {
     try {
       const q = query(collection(db, "clients"), orderBy("createdAt", "desc"));
       const snapshot = await getDocs(q);
-      const data = await Promise.all(
-        snapshot.docs.map(async (docSnap) => {
-          const data = docSnap.data();
-          const client = { docId: docSnap.id, ...data };
-          const urls = await getClientImages(client.clientId || client.docId);
-          client.productImages = urls;
-          client.serviceStatus = getClientStatus(
-            client.activationDate,
-            client.serviceTenure?.split(" ")[0]
-          );
-          return client;
-        })
-      );
-      data.forEach((item) => (item.select = false));
+
+      const data = snapshot.docs.map((docSnap) => ({
+        docId: docSnap.id,
+        ...docSnap.data(),
+        productImages: [],
+        serviceStatus: getClientStatus(
+          docSnap.data().activationDate,
+          docSnap.data().serviceTenure?.split(" ")[0]
+        ),
+      }));
+
       setAllClients(data);
       setFilteredData(data);
       setLoading(false);
@@ -292,59 +365,69 @@ const Services = () => {
   const columns = useMemo(
     () => [
       {
-  Header: () => (
-    <div className="flex items-center gap-1">
-      <input
-        type="checkbox"
-        checked={
-          selectedRows.length > 0 &&
-          selectedRows.length === filteredData.length
-        }
-        onChange={(e) => {
-          if (e.target.checked) {
-            setSelectedRows(filteredData.map((c) => c.docId));
-          } else {
-            setSelectedRows([]);
-          }
-        }}
-      />
-      <span className="text-xs font-semibold">Select</span>
-    </div>
-  ),
-  accessor: "select",
-  disableSortBy: true,
+        Header: () => (
+          <div className="flex items-center gap-1">
+            <input
+              type="checkbox"
+              checked={
+                selectedRows.length > 0 &&
+                selectedRows.length === filteredData.length
+              }
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setSelectedRows(filteredData.map((c) => c.docId));
+                } else {
+                  setSelectedRows([]);
+                }
+              }}
+            />
+            <span className="text-xs font-semibold">Select</span>
+          </div>
+        ),
+        accessor: "select",
+        disableSortBy: true,
 
-  Cell: ({ row }) => {
-    const id = row.original.docId;
+        Cell: ({ row }) => {
+          const id = row.original.docId;
 
-    return (
-      <input
-        type="checkbox"
-        checked={selectedRows.includes(id)}
-        onChange={() => {
-          setSelectedRows((prev) =>
-            prev.includes(id)
-              ? prev.filter((x) => x !== id)
-              : [...prev, id]
+          return (
+            <input
+              type="checkbox"
+              checked={selectedRows.includes(id)}
+              onChange={() => {
+                setSelectedRows((prev) =>
+                  prev.includes(id)
+                    ? prev.filter((x) => x !== id)
+                    : [...prev, id]
+                );
+              }}
+            />
           );
-        }}
-      />
-    );
-  },
+        },
 
-  width: 50,
-},
+        width: 50,
+      },
 
       {
         Header: "Profile ID",
         accessor: "docId",
-        Cell: ({ value }) => (
-          <button className="text-blue-600 font-medium">{value}</button>
+        Cell: ({ row }) => (
+          <button
+            className="text-blue-600 font-medium underline cursor-pointer"
+            onClick={() => {
+              setSelectedClient(row.original);
+              setShowProspectPopup(true);
+            }}
+          >
+            {row.original.docId}
+          </button>
         ),
       },
+
       { Header: "Company Name", accessor: "companyName" },
       { Header: "Brand Name", accessor: "brandName" },
       { Header: "Contact Person", accessor: "contactPerson" },
+
       {
         Header: "Service Status",
         accessor: "serviceStatus",
@@ -367,6 +450,7 @@ const Services = () => {
           );
         },
       },
+
       { Header: "Service Tenure", accessor: "serviceTenure" },
       { Header: "Activation Date", accessor: "activationDate" },
       {
@@ -374,9 +458,9 @@ const Services = () => {
         accessor: "serviceExpireDate",
         className: "min-w-[130px] max-w-[240px]",
       },
-      { Header: "Sales Executive", accessor: "salesExecutive" },
-      { Header: "Service", accessor: "servicePlan" },
+      { Header: "Service Type", accessor: "servicePlan" },
       { Header: "Sales Amount", accessor: "salesAmount" },
+      { Header: "Sales Executive", accessor: "salesExecutive" },
       { Header: "Mobile", accessor: "mobile" },
       { Header: "Email", accessor: "email" },
       { Header: "City", accessor: "city" },
@@ -384,35 +468,14 @@ const Services = () => {
       { Header: "Pin Code", accessor: "pinCode" },
       { Header: "GST Number", accessor: "gst" },
       { Header: "Turnover", accessor: "turnOver" },
+      { Header: "Website Link", accessor: "websiteLink" },
+      { Header: "Marketplace 1", accessor: "marketplace1" },
+      { Header: "Marketplace 2", accessor: "marketplace2" },
+      { Header: "Marketplace 3", accessor: "marketplace3" },
+      { Header: "Marketplace 4", accessor: "marketplace4" },
       { Header: "Notes", accessor: "notes" },
-
-      // {
-      //   Header: "Images",
-      //   accessor: "images",
-      //   Cell: ({ row }) => {
-      //     const hasImages =
-      //       row.original.images && row.original.images.length > 0;
-
-      //     return hasImages ? (
-      //       <button
-      //         onClick={() =>
-      //           setSelectedImage({
-      //             urls: row.original.images,
-      //             name: row.original.fullName || row.original.docId,
-      //             details: row.original,
-      //           })
-      //         }
-      //         className="text-blue-600 hover:underline cursor-pointer"
-      //       >
-      //         View Images
-      //       </button>
-      //     ) : (
-      //       <span className="text-gray-600 text-xs">No images</span>
-      //     );
-      //   },
-      // },
     ],
-    []
+    [selectedRows, filteredData]
   );
 
   const generateUniqueClientId = async () => {
@@ -423,11 +486,11 @@ const Services = () => {
     );
     const snapshot = await getDocs(q);
     if (snapshot.empty) {
-      return "1CC0001";
+      return "SB0001";
     }
     const lastId = snapshot.docs[0].data().clientId;
-    const num = parseInt(lastId.replace("1CC", "")) + 1;
-    return "1CC" + num.toString().padStart(4, "0");
+    const num = parseInt(lastId.replace("SB", "")) + 1;
+    return "SB" + num.toString().padStart(4, "0");
   };
 
   useEffect(() => {
@@ -629,304 +692,90 @@ const Services = () => {
               className="space-y-3"
             >
               {/* Basic Details */}
+              {/* Basic Details */}
               <h3 className="text-xl font-semibold border-b pb-2">
                 Basic Details
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {/* Contact Person */}
-                <div className="mb-1">
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Contact Person: <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="contactPerson"
-                    value={formData.contactPerson}
-                    onChange={handleChange}
-                    className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring"
-                    placeholder="Enter contact name"
-                  />
-                </div>
 
-                {/* Mobile Number */}
-                <div className="mb-1">
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Mobile Number: <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="mobile"
-                    value={formData.mobile}
-                    onChange={handleChange}
-                    className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring"
-                    placeholder="Enter Mobile number"
-                  />
-                  {errors.mobile && (
-                    <p className="text-red-500 text-xs mt-1">{errors.mobile}</p>
-                  )}
-                </div>
-
-                {/* Email */}
-                <div className="mb-1">
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Email: <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring"
-                    placeholder="Enter email address"
-                  />
-                  {errors.email && (
-                    <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-                  )}
-                </div>
-
-                {/* City */}
-                <div className="mb-1">
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    City: <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring"
-                    placeholder="Enter city"
-                  />
-                  {errors.city && (
-                    <p className="text-red-500 text-xs mt-1">{errors.city}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Business Details */}
-              <h3 className="text-xl font-semibold border-b pb-2">
-                Business Details
-              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {/* Company Name */}
                 <div className="mb-1">
                   <label className="block text-gray-700 font-semibold mb-2">
-                    Company Name: <span className="text-red-500">*</span>
+                    Company Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     name="companyName"
                     value={formData.companyName}
                     onChange={handleChange}
-                    className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring"
+                    className="w-full px-3 py-1 border rounded-md"
                     placeholder="Enter company name"
                   />
-                  {errors.companyName && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.companyName}
-                    </p>
-                  )}
                 </div>
 
                 {/* Brand Name */}
                 <div className="mb-1">
                   <label className="block text-gray-700 font-semibold mb-2">
-                    Brand Name:
+                    Brand Name
                   </label>
                   <input
                     type="text"
                     name="brandName"
                     value={formData.brandName}
                     onChange={handleChange}
-                    className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring"
+                    className="w-full px-3 py-1 border rounded-md"
                     placeholder="Enter brand name"
                   />
                 </div>
-              </div>
 
-              {/* Company Address */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {/* Contact Person */}
                 <div className="mb-1">
                   <label className="block text-gray-700 font-semibold mb-2">
-                    Company Address: <span className="text-red-500">*</span>
+                    Contact Person <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    name="companyAddress"
-                    value={formData.companyAddress}
+                    name="contactPerson"
+                    value={formData.contactPerson}
                     onChange={handleChange}
-                    className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring"
-                    placeholder="Enter company address"
-                  />
-                  {errors.companyAddress && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.companyAddress}
-                    </p>
-                  )}
-                </div>
-
-                {/* Pin Code */}
-                <div className="mb-1">
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Pin Code:
-                  </label>
-                  <input
-                    type="number"
-                    name="pinCode"
-                    value={formData.pinCode}
-                    onChange={handleChange}
-                    className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring"
-                    placeholder="Enter Pin Code"
+                    className="w-full px-3 py-1 border rounded-md"
+                    placeholder="Enter contact name"
                   />
                 </div>
               </div>
 
-              {/* GST */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div className="mb-1">
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    GST Number:
-                  </label>
-                  <input
-                    type="text"
-                    name="gst"
-                    value={formData.gst}
-                    onChange={handleChange}
-                    className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring"
-                    placeholder="Enter GST Number"
-                  />
-                </div>
-
-                {/* Turnover */}
-                <div className="mb-1">
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Turnover:
-                  </label>
-                  <input
-                    type="text"
-                    name="turnOver"
-                    value={formData.turnOver}
-                    onChange={handleChange}
-                    className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring"
-                    placeholder="Enter Turnover"
-                  />
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Share Product Images:
-                </label>
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    id="imageUpload"
-                    onChange={handleImageChange}
-                    className="hidden"
-                  />
-
-                  {/* */}
-                  <label
-                    htmlFor="imageUpload"
-                    className="flex items-center gap-2 cursor-pointer border  text-sm border-gray-300 rounded-xl px-4 py-2 text-gray-700 hover:border-black transition-all"
-                  >
-                    <ImageIcon className="w-5 h-5 text-[#FE681C] " />
-                    {selectedImages.length > 0
-                      ? `${selectedImages.length} file(s) selected`
-                      : "Click to choose images"}
-                  </label>
-                </div>
-
-                {/* Preview Images */}
-                {imagePreviews.length > 0 && (
-                  <div className="flex flex-wrap gap-3 mt-3">
-                    {imagePreviews.map((preview, index) => (
-                      <div key={index} className="relative w-24 h-24">
-                        <img
-                          src={preview}
-                          alt={`Preview ${index}`}
-                          className="w-24 h-24 object-cover rounded-xl border"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImage(index)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Activation Details */}
-              <h3 className="text-xl font-semibold border-b pb-2">
-                Activation Details
+              {/* Service Details */}
+              <h3 className="text-xl font-semibold border-b pb-2 mt-4">
+                Service Details
               </h3>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {/* Sales Executive */}
+                {/* Service Status (readonly) */}
                 <div className="mb-1">
                   <label className="block text-gray-700 font-semibold mb-2">
-                    Sales Executive (Name with eCode):
+                    Service Status
                   </label>
                   <input
                     type="text"
-                    name="salesExecutive"
-                    value={formData.salesExecutive}
-                    onChange={handleChange}
-                    className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring"
-                    placeholder="Enter Sales Executive"
-                  />
-                </div>
-
-                {/* Service Plan */}
-                <div className="mb-1">
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Service Plan Name:
-                  </label>
-                  <input
-                    type="text"
-                    name="servicePlan"
-                    value={formData.servicePlan}
-                    onChange={handleChange}
-                    className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring"
-                    placeholder="Enter Service Plan"
-                  />
-                </div>
-
-                {/* Sales Amount */}
-                <div className="mb-1">
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Sales Amount (with GST 18%):
-                  </label>
-                  <input
-                    type="number"
-                    name="salesAmount"
-                    value={formData.salesAmount}
-                    onChange={handleChange}
-                    className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring"
-                    placeholder="Enter Amount"
+                    value={getClientStatus(
+                      formData.activationDate,
+                      formData.serviceTenure?.split(" ")[0]
+                    )}
+                    disabled
+                    className="w-full px-3 py-1 bg-gray-100 border rounded-md"
                   />
                 </div>
 
                 {/* Service Tenure */}
                 <div className="mb-1">
                   <label className="block text-gray-700 font-semibold mb-2">
-                    Service Tenure: <span className="text-red-500">*</span>
+                    Service Tenure <span className="text-red-500">*</span>
                   </label>
-
                   <select
                     name="serviceTenure"
                     value={formData.serviceTenure}
                     onChange={handleTenureChange}
-                    className={`w-full px-3 py-1 border rounded-md focus:outline-none focus:ring ${
-                      errors.serviceTenure
-                        ? "border-red-500"
-                        : "border-gray-300"
-                    }`}
+                    className="w-full px-3 py-1 border rounded-md"
                   >
                     <option value="">Select Tenure</option>
                     <option value="1 Months">1 Month</option>
@@ -935,67 +784,235 @@ const Services = () => {
                     <option value="6 Months">6 Months</option>
                     <option value="12 Months">12 Months</option>
                   </select>
-
-                  {errors.serviceTenure && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.serviceTenure}
-                    </p>
-                  )}
                 </div>
 
                 {/* Activation Date */}
                 <div className="mb-1">
                   <label className="block text-gray-700 font-semibold mb-2">
-                    Service Activation Date:{" "}
-                    <span className="text-red-500">*</span>
+                    Activation Date
                   </label>
                   <input
                     type="date"
                     name="activationDate"
                     value={formData.activationDate}
                     onChange={handleChange}
-                    disabled={formData.serviceTenure !== "Other"}
-                    className={`w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring ${
-                      formData.serviceTenure !== "Other"
-                        ? "bg-gray-100 cursor-not-allowed"
-                        : ""
-                    }`}
+                    className="w-full px-3 py-1 border rounded-md"
                   />
                 </div>
 
-                {/* Service Expire Date */}
+                {/* Expiry Date */}
                 <div className="mb-1">
                   <label className="block text-gray-700 font-semibold mb-2">
-                    Service Expire Date: <span className="text-red-500">*</span>
+                    Service Expire Date
                   </label>
                   <input
                     type="date"
                     name="serviceExpireDate"
                     value={formData.serviceExpireDate}
                     onChange={handleChange}
-                    disabled={formData.serviceTenure !== "Other"}
-                    className={`w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring ${
-                      formData.serviceTenure !== "Other"
-                        ? "bg-gray-100 cursor-not-allowed"
-                        : ""
-                    }`}
+                    className="w-full px-3 py-1 border rounded-md"
                   />
                 </div>
 
-                {/* Notes */}
-                <div className="mb-1 md:col-span-2">
+                {/* Service Type — NEW FIELD */}
+                <div className="mb-1">
                   <label className="block text-gray-700 font-semibold mb-2">
-                    Notes:
+                    Service Type *
                   </label>
-                  <textarea
-                    name="notes"
-                    value={formData.notes}
+                  <input
+                    type="text"
+                    name="servicePlan"
+                    value={formData.servicePlan}
                     onChange={handleChange}
-                    className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring"
-                    placeholder="Additional notes..."
-                  ></textarea>
+                    className="w-full px-3 py-1 border rounded-md"
+                    placeholder="Enter service type (e.g., SEO, Ads, SMM)"
+                  />
+                </div>
+
+                {/* Sales Amount */}
+                <div className="mb-1">
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Sales Amount
+                  </label>
+                  <input
+                    type="number"
+                    name="salesAmount"
+                    value={formData.salesAmount}
+                    onChange={handleChange}
+                    className="w-full px-3 py-1 border rounded-md"
+                    placeholder="Enter Amount"
+                  />
+                </div>
+
+                {/* Sales Executive */}
+                <div className="mb-1">
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Sales Executive
+                  </label>
+                  <input
+                    type="text"
+                    name="salesExecutive"
+                    value={formData.salesExecutive}
+                    onChange={handleChange}
+                    className="w-full px-3 py-1 border rounded-md"
+                    placeholder="Enter Sales Executive Name"
+                  />
                 </div>
               </div>
+
+              {/* Contact Details */}
+              <h3 className="text-xl font-semibold border-b pb-2 mt-4">
+                Contact Details
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="mb-1">
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Mobile
+                  </label>
+                  <input
+                    type="number"
+                    name="mobile"
+                    value={formData.mobile}
+                    onChange={handleChange}
+                    className="w-full px-3 py-1 border rounded-md"
+                    placeholder="Enter Mobile"
+                  />
+                </div>
+
+                <div className="mb-1">
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full px-3 py-1 border rounded-md"
+                    placeholder="Enter Email"
+                  />
+                </div>
+
+                <div className="mb-1">
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleChange}
+                    className="w-full px-3 py-1 border rounded-md"
+                    placeholder="Enter City"
+                  />
+                </div>
+
+                <div className="mb-1 md:col-span-2">
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Company Address
+                  </label>
+                  <input
+                    type="text"
+                    name="companyAddress"
+                    value={formData.companyAddress}
+                    onChange={handleChange}
+                    className="w-full px-3 py-1 border rounded-md"
+                    placeholder="Enter Address"
+                  />
+                </div>
+
+                <div className="mb-1">
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Pin Code
+                  </label>
+                  <input
+                    type="number"
+                    name="pinCode"
+                    value={formData.pinCode}
+                    onChange={handleChange}
+                    className="w-full px-3 py-1 border rounded-md"
+                    placeholder="Enter Pin Code"
+                  />
+                </div>
+
+                <div className="mb-1">
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    GST Number
+                  </label>
+                  <input
+                    type="text"
+                    name="gst"
+                    value={formData.gst}
+                    onChange={handleChange}
+                    className="w-full px-3 py-1 border rounded-md"
+                    placeholder="Enter GST No."
+                  />
+                </div>
+
+                <div className="mb-1">
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Turnover
+                  </label>
+                  <input
+                    type="text"
+                    name="turnOver"
+                    value={formData.turnOver}
+                    onChange={handleChange}
+                    className="w-full px-3 py-1 border rounded-md"
+                    placeholder="Enter Turnover"
+                  />
+                </div>
+              </div>
+
+              {/* Website & Marketplace Links */}
+              <h3 className="text-xl font-semibold border-b pb-2 mt-4">
+                Online Presence
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="mb-1">
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Website Link
+                  </label>
+                  <input
+                    type="text"
+                    name="website"
+                    value={formData.website}
+                    onChange={handleChange}
+                    className="w-full px-3 py-1 border rounded-md"
+                    placeholder="Enter website URL"
+                  />
+                </div>
+
+                {[1, 2, 3, 4].map((num) => (
+                  <div className="mb-1" key={num}>
+                    <label className="block text-gray-700 font-semibold mb-2">
+                      Marketplace Link {num}
+                    </label>
+                    <input
+                      type="text"
+                      name={`marketplace${num}`}
+                      value={formData[`marketplace${num}`] || ""}
+                      onChange={handleChange}
+                      className="w-full px-3 py-1 border rounded-md"
+                      placeholder={`Enter marketplace link ${num}`}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Notes */}
+              <h3 className="text-xl font-semibold border-b pb-2 mt-4">
+                Notes
+              </h3>
+              <textarea
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border rounded-md"
+                placeholder="Add notes..."
+              ></textarea>
 
               {/* Submit */}
               <button
@@ -1039,7 +1056,11 @@ const Services = () => {
                     checked={visibleColumns[col.accessor] || false}
                     onChange={() => handleToggleColumn(col.accessor)}
                   />
-                  {col.Header}
+
+                  {/* FIX: Prevent function render error */}
+                  <span>
+                    {typeof col.Header === "string" ? col.Header : col.accessor}
+                  </span>
                 </label>
               ))}
             </div>
@@ -1172,6 +1193,91 @@ const Services = () => {
                   <strong>Email:</strong> {selectedImage.details.email}
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showProspectPopup && (
+        <div className="fixed top-0 right-0 h-full w-[600px] bg-white shadow-xl border-l p-5 z-9999 overflow-y-auto">
+          {/* Header */}
+          <div className="flex justify-between items-center border-b pb-4 mb-5">
+            <h2 className="text-xl font-semibold text-gray-800">
+              Notes – {selectedClient?.docId}
+            </h2>
+
+            <button
+              className="text-red-500 text-2xl hover:text-red-600 transition cursor-pointer"
+              onClick={() => setShowProspectPopup(false)}
+            >
+              ✖
+            </button>
+          </div>
+
+          {/* Add New Note */}
+          <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">
+              Add Note
+            </h3>
+
+            <textarea
+              placeholder="Write a note..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="border border-gray-300 rounded-md px-3 py-2 w-full text-sm h-28 
+        focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
+            ></textarea>
+
+            <button
+              onClick={saveNote}
+              className="bg-orange-600 hover:bg-orange-700 active:scale-[0.98] transition 
+        text-white px-4 py-2.5 rounded-md w-full font-medium text-sm shadow-sm cursor-pointer"
+            >
+              Save Note
+            </button>
+          </div>
+
+          {/* Notes History */}
+          <h3 className="font-semibold mt-6 mb-3 text-lg text-gray-800">
+            Notes History
+          </h3>
+
+          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white">
+            <div className="bg-gray-50 px-5 py-3 font-semibold text-gray-700 text-sm border-b">
+              Previous Notes
+            </div>
+
+            <div className="max-h-80 overflow-y-auto divide-y divide-gray-200">
+              {notesHistory.length === 0 ? (
+                <div className="p-5 text-gray-500 text-sm">
+                  No notes added yet.
+                </div>
+              ) : (
+                notesHistory.map((item, index) => (
+                  <div
+                    key={index}
+                    className="px-5 py-3 text-sm hover:bg-gray-50 transition"
+                  >
+                    <p className="text-gray-800 whitespace-pre-wrap">
+                      {item.note}
+                    </p>
+
+                    <div className="flex justify-between items-center mt-2">
+                      <p className="text-xs text-gray-500">
+                        {new Date(item.createdAt).toLocaleString()}
+                      </p>
+
+                      {/* Delete Button */}
+                      <button
+                        onClick={() => deleteNote(item.id)}
+                        className="text-red-500 text-xs hover:text-red-700"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

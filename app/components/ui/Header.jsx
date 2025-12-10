@@ -57,7 +57,7 @@ export default function CRMHeader({ onModuleChange, selected }) {
             }}
           >
             <img
-              src="/flatLogo.png"
+              src="/logo.png"
               alt="logo"
               className="h-[35px] w-auto select-none cursor-pointer"
             />
@@ -107,7 +107,7 @@ export default function CRMHeader({ onModuleChange, selected }) {
           </li>
 
           {/* Distributor Management */}
-          <li
+          {/* <li
             className="flex items-center gap-4 p-3 cursor-pointer hover:bg-gray-300 border-b border-gray-300 hover:border-gray-400 transition-all"
             onClick={() => {
               onModuleChange("dashboard");
@@ -116,7 +116,7 @@ export default function CRMHeader({ onModuleChange, selected }) {
           >
             <img src="/distributor.png" alt="distributor icon" className="h-5 w-5"/>
             <span>Distributor Management</span>
-          </li>
+          </li> */}
 
 
           {/* Service Activation Panel */}
