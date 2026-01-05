@@ -20,7 +20,7 @@ export default function DashboardPage() {
           {module === "board"}
 
            {/* distributor MGMT content */}
-          {module === "dashboard" && <DataTable />}
+          {module === "onboarding" && <DataTable />}
 
           {/* service management content*/}
           {module === "service-management" && <Service />}

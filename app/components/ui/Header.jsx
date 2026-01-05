@@ -107,16 +107,16 @@ export default function CRMHeader({ onModuleChange, selected }) {
           </li>
 
           {/* Distributor Management */}
-          {/* <li
+          <li
             className="flex items-center gap-4 p-3 cursor-pointer hover:bg-gray-300 border-b border-gray-300 hover:border-gray-400 transition-all"
             onClick={() => {
-              onModuleChange("dashboard");
+              onModuleChange("onboarding");
               setShowSidebar(false);
             }}
           >
-            <img src="/distributor.png" alt="distributor icon" className="h-5 w-5"/>
-            <span>Distributor Management</span>
-          </li> */}
+            <img src="/onboarding.png" alt="onboarding icon" className="h-5 w-5"/>
+            <span>Onboarding</span>
+          </li>
 
 
           {/* Service Activation Panel */}
@@ -150,7 +150,7 @@ export default function CRMHeader({ onModuleChange, selected }) {
         <div className="absolute bottom-4 left-0 w-full flex justify-center">
           <img
             src="/flatLogo.png"
-            alt="iClickDistributor Logo"
+            alt="sellers buddy ;logo"
             className=" h-40px w-auto"
           />
         </div>

@@ -25,4 +25,9 @@ body {
   font-weight: 400;
 }
 
-
+.label {
+  @apply block text-gray-700 font-semibold mb-1;
+}
+.input {
+  @apply w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring;
+}

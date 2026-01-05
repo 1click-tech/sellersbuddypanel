@@ -22,6 +22,84 @@ import { statusFilters, getClientStatus } from "@/app/utills/filters";
 import { Funnel } from "lucide-react";
 import { ref, uploadBytes, getDownloadURL, listAll } from "firebase/storage";
 
+const TextModal = ({ title, text, onClose }) => {
+  if (!text) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-9999">
+      <div className="bg-white rounded-lg shadow-xl w-[90%] max-w-[700px]">
+        <div className="flex justify-between items-center px-4 py-3 border-b">
+          <h3 className="font-semibold text-gray-800">{title}</h3>
+          <button
+            onClick={onClose}
+            className="text-xl text-gray-500 hover:text-red-500"
+          >
+            ✖
+          </button>
+        </div>
+
+        <div className="p-4 max-h-[70vh] overflow-y-auto">
+          <p className="text-gray-800 whitespace-pre-wrap text-sm">{text}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const TruncateTextCell = ({
+  value,
+  title,
+  width = "260px",
+  isLink = false,
+}) => {
+  const [open, setOpen] = useState(false);
+  if (!value) return "—";
+
+  return (
+    <>
+      <div
+        className="truncate cursor-pointer text-gray-800"
+        style={{ maxWidth: width }}
+        title="Click to view"
+        onClick={() => setOpen(true)}
+      >
+        {value}
+      </div>
+
+      {open && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-9999">
+          <div className="bg-white rounded-lg shadow-xl w-[90%] max-w-[700px]">
+            <div className="flex justify-between items-center px-4 py-3 border-b">
+              <h3 className="font-semibold text-gray-800">{title}</h3>
+              <button
+                onClick={() => setOpen(false)}
+                className="text-xl text-gray-500 hover:text-red-500"
+              >
+                ✖
+              </button>
+            </div>
+
+            <div className="p-4 max-h-[70vh] overflow-y-auto text-sm text-gray-800 break-all">
+              {isLink ? (
+                <a
+                  href={value}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  {value}
+                </a>
+              ) : (
+                <p className="whitespace-pre-wrap">{value}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
 const Services = () => {
   const [errors, setErrors] = useState({});
   const [openForms, setOpenForms] = useState([]);
@@ -238,10 +316,10 @@ const Services = () => {
     if (!/^\S+@\S+\.\S+$/.test(formData.email))
       newErrors.email = "Invalid email";
     if (!formData.city.trim()) newErrors.city = "City required";
-    if (!formData.companyName.trim())
-      newErrors.companyName = "Company Name required";
-    if (!formData.companyAddress.trim())
-      newErrors.companyAddress = "Address required";
+    // if (!formData.companyName.trim())
+    //   newErrors.companyName = "Company Name required";
+    // if (!formData.companyAddress.trim())
+    //   newErrors.companyAddress = "Address required";
     if (!formData.serviceTenure.trim())
       newErrors.serviceTenure = "Select service tenure";
     if (!formData.activationDate)
@@ -464,16 +542,62 @@ const Services = () => {
       { Header: "Mobile", accessor: "mobile" },
       { Header: "Email", accessor: "email" },
       { Header: "City", accessor: "city" },
-      { Header: "Company Address", accessor: "companyAddress" },
+      {
+        Header: "Company Address",
+        accessor: "companyAddress",
+        Cell: ({ value }) => (
+          <TruncateTextCell
+            value={value}
+            title="Company Address"
+            width="300px"
+          />
+        ),
+      },
+
       { Header: "Pin Code", accessor: "pinCode" },
       { Header: "GST Number", accessor: "gst" },
       { Header: "Turnover", accessor: "turnOver" },
-      { Header: "Website Link", accessor: "websiteLink" },
-      { Header: "Marketplace 1", accessor: "marketplace1" },
-      { Header: "Marketplace 2", accessor: "marketplace2" },
-      { Header: "Marketplace 3", accessor: "marketplace3" },
-      { Header: "Marketplace 4", accessor: "marketplace4" },
-      { Header: "Notes", accessor: "notes" },
+      {
+        Header: "Website Link",
+        accessor: "website",
+        Cell: ({ value }) => (
+          <TruncateTextCell value={value} title="Website Link" isLink />
+        ),
+      },
+      {
+        Header: "Marketplace 1",
+        accessor: "marketplace1",
+        Cell: ({ value }) => (
+          <TruncateTextCell value={value} title="Marketplace Link 1" isLink />
+        ),
+      },
+      {
+        Header: "Marketplace 2",
+        accessor: "marketplace2",
+        Cell: ({ value }) => (
+          <TruncateTextCell value={value} title="Marketplace Link 2" isLink />
+        ),
+      },
+      {
+        Header: "Marketplace 3",
+        accessor: "marketplace3",
+        Cell: ({ value }) => (
+          <TruncateTextCell value={value} title="Marketplace Link 3" isLink />
+        ),
+      },
+      {
+        Header: "Marketplace 4",
+        accessor: "marketplace4",
+        Cell: ({ value }) => (
+          <TruncateTextCell value={value} title="Marketplace Link 4" isLink />
+        ),
+      },
+
+      {
+        Header: "Notes",
+        accessor: "notes",
+        Cell: ({ value }) => <TruncateTextCell value={value} title="Notes" />,
+      },
     ],
     [selectedRows, filteredData]
   );
@@ -817,7 +941,7 @@ const Services = () => {
                 {/* Service Type — NEW FIELD */}
                 <div className="mb-1">
                   <label className="block text-gray-700 font-semibold mb-2">
-                    Service Type *
+                    Service Type <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -832,7 +956,7 @@ const Services = () => {
                 {/* Sales Amount */}
                 <div className="mb-1">
                   <label className="block text-gray-700 font-semibold mb-2">
-                    Sales Amount
+                    Sales Amount <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -847,7 +971,7 @@ const Services = () => {
                 {/* Sales Executive */}
                 <div className="mb-1">
                   <label className="block text-gray-700 font-semibold mb-2">
-                    Sales Executive
+                    Sales Executive 
                   </label>
                   <input
                     type="text"
@@ -868,7 +992,7 @@ const Services = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <div className="mb-1">
                   <label className="block text-gray-700 font-semibold mb-2">
-                    Mobile
+                    Mobile <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -882,7 +1006,7 @@ const Services = () => {
 
                 <div className="mb-1">
                   <label className="block text-gray-700 font-semibold mb-2">
-                    Email
+                    Email <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="email"
@@ -896,7 +1020,7 @@ const Services = () => {
 
                 <div className="mb-1">
                   <label className="block text-gray-700 font-semibold mb-2">
-                    City
+                    City <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
