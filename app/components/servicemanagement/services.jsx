@@ -706,46 +706,43 @@ const Services = () => {
         )}
 
         {/* Funnel Button */}
-        <button
+        {/* <button
           onClick={() => setShowFilter(!showFilter)}
           className="flex items-center gap-1 px-2 border border-gray-300 text-gray-700 py-1 rounded-md hover:bg-gray-100 text-sm cursor-pointer"
         >
           <Funnel size={22} />
-        </button>
+        </button> */}
 
-        {/* filters button */}
-        {showFilter && (
-          <div className="flex items-center gap-2 p-2 border border-gray-300 py-1 rounded-md">
-            {statusFilters.map((filter) => (
-              <button
-                key={filter.value}
-                onClick={() => {
-                  const filtered = allClients.filter(
-                    (client) =>
-                      getClientStatus(
-                        client.activationDate,
-                        client.serviceTenure?.split(" ")[0]
-                      ) === filter.value
-                  );
-                  setFilteredData(filtered);
-                }}
-                className={`px-2 py-1 bg-gray-200 text-xs rounded-md  hover:text-white transition ${filter.className}`}
-              >
-                {filter.label}
-              </button>
-            ))}
 
-            {/* Clear Filter */}
+        {/* Filter Options  */}
+        <div className="flex items-center gap-2 p-2 border border-gray-300 py-1 rounded-md">
+          {statusFilters.map((filter) => (
             <button
+              key={filter.value}
               onClick={() => {
-                setFilteredData(allClients);
+                const filtered = allClients.filter(
+                  (client) =>
+                    getClientStatus(
+                      client.activationDate,
+                      client.serviceTenure?.split(" ")[0]
+                    ) === filter.value
+                );
+                setFilteredData(filtered);
               }}
-              className="px-2 py-1 bg-gray-300 border border-gray-600 text-xs rounded-md hover:bg-gray-600 hover:text-white transition cursor-pointer"
+              className={`px-2 py-1 bg-gray-200 text-xs rounded-md hover:text-white transition ${filter.className}`}
             >
-              Reset
+              {filter.label}
             </button>
-          </div>
-        )}
+          ))}
+
+          {/* Reset Button */}
+          <button
+            onClick={() => setFilteredData(allClients)}
+            className="px-2 py-1 bg-gray-300 border border-gray-600 text-xs rounded-md hover:bg-gray-600 hover:text-white transition"
+          >
+            Reset
+          </button>
+        </div>
       </div>
 
       {openForms.map((form) => (
@@ -971,7 +968,7 @@ const Services = () => {
                 {/* Sales Executive */}
                 <div className="mb-1">
                   <label className="block text-gray-700 font-semibold mb-2">
-                    Sales Executive 
+                    Sales Executive
                   </label>
                   <input
                     type="text"
